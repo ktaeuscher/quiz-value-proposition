@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Value Proposition Quiz</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+  /* Layout: one centred reading column, one card per question, progress bar at the top. */
+  :root {
+    --bg: #f3f2f5;
+    --card: #ffffff;
+    --fg: #1f1b24;
+    --muted: #6b6475;
+    --line: #d9d5e0;
+    --accent: #660099;      /* University of Manchester purple */
+    --accent-soft: #efe6f6;
+    --ok: #1f7a3d;
+    --ok-soft: #e4f3e8;
+    --bad: #b3261e;
+    --bad-soft: #fbe7e5;
+    --font: "Source Sans 3", "Segoe UI", Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17141c; --card: #221e2a; --fg: #ece8f1; --muted: #a9a2b4; --line: #3a3444;
+      --accent: #b784d9; --accent-soft: #2e2440; --ok: #6fcf8e; --ok-soft: #1d3326;
+      --bad: #f28b82; --bad-soft: #3d2320; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17141c; --card: #221e2a; --fg: #ece8f1; --muted: #a9a2b4; --line: #3a3444;
+    --accent: #b784d9; --accent-soft: #2e2440; --ok: #6fcf8e; --ok-soft: #1d3326;
+    --bad: #f28b82; --bad-soft: #3d2320; color-scheme: dark;
+  }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 17px; line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 24px;
+  }
+  main { max-width: 720px; margin: 0 auto; }
+  header { margin-bottom: 20px; }
+  .eyebrow { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  h1 { font-size: 26px; margin: 4px 0 6px; line-height: 1.2; text-wrap: balance; }
+  header p { margin: 0; color: var(--muted); max-width: 60ch; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 22px; }
+  .top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+  .top .count { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-bottom: 22px; }
+  .bar > div { height: 100%; background: var(--accent); width: 0; transition: width .25s; }
+  h2.q { font-size: 20px; line-height: 1.35; margin: 0 0 18px; font-weight: 600; text-wrap: balance; }
+  .opts { display: grid; gap: 10px; }
+  .opt {
+    display: flex; align-items: flex-start; gap: 12px; width: 100%; text-align: left;
+    padding: 12px 14px; border: 2px solid var(--line); border-radius: 6px; background: var(--card);
+    color: var(--fg); font: inherit; cursor: pointer; min-width: 0;
+  }
+  .opt:hover:not(:disabled) { border-color: var(--accent); }
+  .opt:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .opt:disabled { cursor: default; }
+  .opt .dot { flex: 0 0 18px; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line); margin-top: 4px; }
+  .opt.selected { border-color: var(--accent); background: var(--accent-soft); }
+  .opt.selected .dot { border-color: var(--accent); background: var(--accent); }
+  .opt.correct { border-color: var(--ok); background: var(--ok-soft); }
+  .opt.correct .dot { border-color: var(--ok); background: var(--ok); }
+  .opt.wrong { border-color: var(--bad); background: var(--bad-soft); }
+  .opt.wrong .dot { border-color: var(--bad); background: var(--bad); }
+  .explain { margin-top: 18px; padding: 14px 16px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); }
+  .explain strong { display: block; margin-bottom: 4px; }
+  .explain.good { border-color: var(--ok); }
+  .explain.bad { border-color: var(--bad); }
+  .actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn {
+    flex: 1; padding: 12px 16px; border-radius: 6px; border: 0; background: var(--accent); color: #fff;
+    font: inherit; font-weight: 600; cursor: pointer;
+  }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn:focus-visible { outline: 3px solid var(--fg); outline-offset: 2px; }
+  .btn.secondary { background: transparent; color: var(--accent); border: 2px solid var(--accent); }
+  .score { text-align: center; margin-bottom: 24px; }
+  .score .big { font-size: 56px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+  .score p { margin: 8px 0 0; color: var(--muted); }
+  .review { display: grid; gap: 10px; margin-bottom: 22px; }
+  .rv { border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; display: grid; grid-template-columns: 22px 1fr; gap: 10px; }
+  .rv .mark { font-weight: 700; }
+  .rv .mark.ok { color: var(--ok); } .rv .mark.no { color: var(--bad); }
+  .rv .qt { font-weight: 600; margin: 0 0 4px; }
+  .rv p { margin: 0; font-size: 15px; }
+  .rv .ans { color: var(--ok); } .rv .yours { color: var(--bad); }
+  .topics { font-size: 15px; color: var(--muted); margin: 0 0 22px; }
+  .topics ul { margin: 6px 0 0; padding-left: 20px; }
+  footer { margin-top: 18px; font-size: 13px; color: var(--muted); }
+  @media (prefers-reduced-motion: reduce) { .bar > div { transition: none; } }
+</style>
+<style>body{margin:0}</style>
+</head>
+<body>
+
+
+<main>
+  <header>
+    <div class="eyebrow">BMAN71721 High-Tech Entrepreneurship · Week 3</div>
+    <h1>Self-assessment quiz: Value Proposition Design</h1>
+    <p>16 questions on customer segments, jobs, pains, gains and value proposition fit. You get feedback after each answer. Nothing is recorded.</p>
+  </header>
+  <div class="card" id="app"></div>
+  <footer>Based on Osterwalder et al. (2014), <em>Value Proposition Design</em>, and the Week 3 lecture.</footer>
+</main>
+
+<script>
+const QUESTIONS = [
+  {
+    q: "A university researcher has developed a new material and is now searching for problems it could solve. Which starting point for a business idea is this?",
+    o: ["Customer-driven: starting from a customer problem", "Technology-driven: starting from an invention or external enabler", "Competitor-driven: copying an existing business model", "Investor-driven: starting from what gets funded"],
+    a: 1,
+    e: "This is the technology-driven route: the solution exists before the problem. It can work, but the founder still has to find a customer segment with a real job and pain before there is a business."
+  },
+  {
+    q: "What is the primary focus of the customer-driven approach to entrepreneurship?",
+    o: ["Developing cutting-edge technology first", "Starting with a customer segment's problems and needs, then searching for a solution", "Maximising profit margins", "Copying successful business models"],
+    a: 1,
+    e: "The customer-driven approach starts by identifying a customer segment with an important problem, and only then searches for a solution. It is the logic behind the Lean Startup method we use in this course."
+  },
+  {
+    q: "In the Value Proposition Canvas, what does “Jobs” refer to?",
+    o: ["Employment opportunities your company creates", "Things customers are trying to get done: tasks, problems to solve, needs to satisfy", "Tasks your employees perform", "The professional occupations of your target market"],
+    a: 1,
+    e: "Jobs (jobs-to-be-done) are what customers are trying to accomplish in their life or work. They can be functional, emotional or social, and they have nothing to do with professions."
+  },
+  {
+    q: "A student says: “I want to discover new music that matches my taste.” This is an example of:",
+    o: ["A pain", "A gain", "A job", "A product feature"],
+    a: 2,
+    e: "This is something the customer is trying to accomplish: a job. A pain would be what gets in the way (“I waste hours scrolling and still find nothing”); a gain would be an outcome they hope for."
+  },
+  {
+    q: "Which of these is an example of a customer pain?",
+    o: ["I want to stay in touch with my friends", "My phone battery dies halfway through the day", "I feel in control when my week is planned", "I need to get to campus every morning"],
+    a: 1,
+    e: "A pain is anything that annoys customers or stops them getting a job done. The dying battery is a pain. The other three are jobs (stay in touch, get to campus) or a gain (feeling in control)."
+  },
+  {
+    q: "You discover that your target customers keep a messy spreadsheet to track their expenses rather than using any app. According to Principle 2, what does this tell you?",
+    o: ["The job is not important to them, otherwise they would have bought a product", "The job matters to them, and their current workaround probably comes with pains you can look for", "There is no market because a solution already exists", "They cannot afford a proper solution"],
+    a: 1,
+    e: "Principle 2: if a job matters, customers already find a way to get it done. A workaround is evidence that the job is real, and the pains of that workaround are where a better value proposition can start."
+  },
+  {
+    q: "A team writes in its Customer Profile: “Students want an app that shows which flats are still available.” What is the problem with this as a customer job?",
+    o: ["Nothing: it is a clearly stated job", "It describes a solution, not what the customer is trying to accomplish", "It is a gain rather than a job", "It should be written as a pain instead"],
+    a: 1,
+    e: "This is a product in disguise. The job behind it is something like “find an available flat quickly and reliably”. Jobs describe what customers want to get done, independent of any solution, yours or anyone else's."
+  },
+  {
+    q: "Another team lists as a customer pain: “There is no website that compares student flats.” What is wrong with this?",
+    o: ["Nothing: missing products are the most important pains", "The absence of your solution is not a pain; the pain is what that absence causes, e.g. hours wasted and not knowing which listings to trust", "It is actually a gain", "It is a job, not a pain"],
+    a: 1,
+    e: "Pains must exist independently of your product. “There is no X” only tells you what you want to build. Ask what the absence causes for the customer, and write that down instead."
+  },
+  {
+    q: "Which of these is the best-defined customer segment for a Customer Profile?",
+    o: ["Everyone who eats", "Students", "Final-year students who cook for themselves on a tight budget", "Small and medium-sized enterprises"],
+    a: 2,
+    e: "A segment needs shared jobs, pains and gains. “Students” or “SMEs” contain people whose jobs and pains differ enormously. The specific segment is narrow enough to describe, interview and design for."
+  },
+  {
+    q: "Which principle relates to the idea that different customer segments may have very different jobs, pains and gains?",
+    o: ["Principle 1: Customers care about jobs, not products", "Principle 2: Customers find ways to get important jobs done", "Principle 3: Most people are not like you", "Principle 4: People often don't know why they do what they do"],
+    a: 2,
+    e: "Principle 3: most people are not like you. The same product can serve very different jobs for different segments, and the same person belongs to different segments depending on role and context."
+  },
+  {
+    q: "According to Principle 4, why should you observe customers and ask about their past behaviour, rather than simply asking what they want?",
+    o: ["Customers intentionally hide their true preferences", "People often don't know, or can't articulate, why they do what they do", "Interviews are faster than surveys", "Customers always ask for lower prices"],
+    a: 1,
+    e: "Principle 4: people often don't know why they do what they do. Asked “why”, they give a plausible answer; asked “would you use this”, they are polite. Good customer research looks at what people actually do and where they struggle."
+  },
+  {
+    q: "When developing a Value Proposition Canvas, you should start with:",
+    o: ["Your products and services", "Your pain relievers", "The Customer Profile (jobs, pains, gains)", "Your pricing"],
+    a: 2,
+    e: "Start with the Customer Profile. Only once you understand the segment's jobs, pains and gains can you design, and later test, a Value Map that fits them."
+  },
+  {
+    q: "Amazon Prime addresses customers' frustration with slow deliveries and shipping costs. In the Value Proposition Canvas, this part of the service is a:",
+    o: ["Customer job", "Pain reliever", "Customer pain", "Gain creator"],
+    a: 1,
+    e: "It removes a specific pain (slow and costly delivery), so it is a pain reliever, which sits on the Value Map. The frustration itself is the customer pain on the other side of the canvas."
+  },
+  {
+    q: "A value proposition “fits” a customer segment when:",
+    o: ["The product has more features than competing products", "The Value Map addresses the jobs, pains and gains that matter most to the segment", "Every job, pain and gain in the Customer Profile is addressed", "Customers say in interviews that they like the idea"],
+    a: 1,
+    e: "Fit means your products, pain relievers and gain creators address the most important jobs, pains and gains, not all of them. More features do not create fit, and saying “I like it” in an interview is not evidence of fit (see Principle 4)."
+  },
+  {
+    q: "Which statement about the Customer Profile is correct?",
+    o: ["It should be written so that it makes sense to someone who has never heard of your product", "It should list the features customers asked for", "It should be written after the Value Map, so the two match", "It should be the same for all customer segments you might serve"],
+    a: 0,
+    e: "The Customer Profile describes the segment independently of any solution. A good test: would it make sense to someone who has never heard of your product? It is written first and differs by segment."
+  },
+  {
+    q: "Why does it matter that customers don't buy products for the products themselves?",
+    o: ["Because products don't matter to business success", "Because customers care about the jobs a product helps them get done, so value lies in the job, not the feature", "Because customers only care about price", "Because marketing matters more than products"],
+    a: 1,
+    e: "Principle 1: customers hire products to get jobs done (nobody wants a drill; they want the picture on the wall). Designing from the job keeps you focused on the value you create rather than on features."
+  }
+];
+
+const app = document.getElementById("app");
+let i = 0, selected = null, submitted = false, score = 0, answers = [];
+
+function render() {
+  if (i >= QUESTIONS.length) return renderResults();
+  const q = QUESTIONS[i];
+  const pct = Math.round((i / QUESTIONS.length) * 100);
+  let html = `
+    <div class="top"><strong>Question ${i + 1}</strong><span class="count">${i + 1} of ${QUESTIONS.length} · Score ${score}/${i}</span></div>
+    <div class="bar"><div style="width:${pct}%"></div></div>
+    <h2 class="q">${q.q}</h2>
+    <div class="opts" role="radiogroup" aria-label="Answer options">`;
+  q.o.forEach((opt, k) => {
+    let cls = "opt";
+    if (submitted) {
+      if (k === q.a) cls += " correct";
+      else if (k === selected) cls += " wrong";
+    } else if (k === selected) cls += " selected";
+    html += `<button type="button" id="opt-${i}-${k}" class="${cls}" role="radio" aria-checked="${k === selected}" data-k="${k}" ${submitted ? "disabled" : ""}><span class="dot"></span><span>${opt}</span></button>`;
+  });
+  html += `</div>`;
+  if (submitted) {
+    const good = selected === q.a;
+    html += `<div class="explain ${good ? "good" : "bad"}"><strong>${good ? "Correct." : "Not quite."}</strong>${q.e}</div>`;
+  }
+  html += `<div class="actions">`;
+  if (!submitted) html += `<button type="button" class="btn" id="submit" ${selected === null ? "disabled" : ""}>Check answer</button>`;
+  else html += `<button type="button" class="btn" id="next">${i < QUESTIONS.length - 1 ? "Next question" : "See results"}</button>`;
+  html += `</div>`;
+  app.innerHTML = html;
+  app.querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => { if (!submitted) { selected = +b.dataset.k; render(); } }));
+  const s = document.getElementById("submit");
+  if (s) s.addEventListener("click", () => {
+    submitted = true; const ok = selected === q.a; if (ok) score++;
+    answers[i] = { selected, ok }; render();
+    const n = document.getElementById("next"); if (n) n.focus();
+  });
+  const n = document.getElementById("next");
+  if (n) n.addEventListener("click", () => { i++; selected = null; submitted = false; render(); window.scrollTo({ top: 0 }); });
+}
+
+function renderResults() {
+  const pct = Math.round((score / QUESTIONS.length) * 100);
+  let msg;
+  if (pct >= 90) msg = "Excellent. You have the mental model: customer first, solution second.";
+  else if (pct >= 75) msg = "Good. Re-read the explanations for the ones you missed before the seminar.";
+  else if (pct >= 60) msg = "Reasonable start. Revisit the lecture slides and chapters 1 and 2 of Value Proposition Design.";
+  else msg = "Worth another pass through the Week 3 materials, then try again.";
+  const missed = QUESTIONS.map((q, k) => ({ q, k })).filter(x => !answers[x.k]?.ok);
+  let html = `<div class="score"><div class="big">${score} / ${QUESTIONS.length}</div><p>${pct}% correct. ${msg}</p></div>`;
+  if (missed.length) {
+    html += `<div class="topics"><strong>Review these:</strong><ul>${missed.map(x => `<li>Q${x.k + 1}: ${x.q.q}</li>`).join("")}</ul></div>`;
+  }
+  html += `<h3 style="margin:0 0 10px;font-size:18px">Your answers</h3><div class="review">`;
+  QUESTIONS.forEach((q, k) => {
+    const a = answers[k];
+    html += `<div class="rv"><span class="mark ${a?.ok ? "ok" : "no"}">${a?.ok ? "✓" : "✗"}</span><div>
+      <p class="qt">Q${k + 1}: ${q.q}</p>
+      ${a?.ok ? `<p class="ans">${q.o[a.selected]}</p>` : `<p class="yours">Your answer: ${q.o[a?.selected] ?? "—"}</p><p class="ans">Correct: ${q.o[q.a]}</p>`}
+    </div></div>`;
+  });
+  html += `</div><div class="actions"><button type="button" class="btn" id="restart">Take the quiz again</button></div>`;
+  app.innerHTML = html;
+  document.getElementById("restart").addEventListener("click", () => { i = 0; selected = null; submitted = false; score = 0; answers = []; render(); window.scrollTo({ top: 0 }); });
+}
+
+render();
+</script>
+
+</body>
+</html>
